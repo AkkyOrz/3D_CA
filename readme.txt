@@ -8,8 +8,8 @@
 また、キーボード入力によって、セルの編集やセルの更新速度の変更を行えるようにした。
 
 ■起動方法
-make n_State_3D_life_game
-./n_State_3D_life_game
+make 3D_LifeGame
+./3D_LifeGame
 
 を実行する。
 初期値の操作は20~25行目で行う。
