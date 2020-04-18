@@ -6,6 +6,7 @@
 
 動画は[こちら](https://www.youtube.com/playlist?list=PL0oc7AkB1TQK4kQ9fDaY6qSUhQsMoNwQf)
 
+![movie](./Sample_movie/4-6-7-12-13.gif)
 ## 起動方法
 
 ```
