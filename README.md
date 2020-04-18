@@ -7,12 +7,39 @@
 動画は[こちら](https://www.youtube.com/playlist?list=PL0oc7AkB1TQK4kQ9fDaY6qSUhQsMoNwQf)
 
 ![movie](./Sample_movie/4-6-7-12-13.gif)
-## 起動方法
 
+# On Linux 
+install OpenMP
 ```
-$ make 3D_LifeGame
+$ sudo ap install libomp-dev
+```
+
+install OpenCL
+```
+$ sudo apt install clinfo
+$ sudo apt install ocl-icd-libopencl1
+$ sudo apt install opencl-headers
+$ sudo apt install ocl-icd-opencl-dev
+```
+
+
+## 起動方法
+Normal 
+```
+$ make Compile_Gnugcc
 $ ./3D_LifeGame
 ```
+Use OpenMP
+```
+$ make Compile_Gnugcc_MP
+$ ./3D_LifeGame
+```
+Use OpenCL
+```
+$ make Compile_Gnugcc_CL
+$ ./3D_LifeGame
+```
+
 によって起動する。
 
 初期値の操作は20~25行目で行う。
