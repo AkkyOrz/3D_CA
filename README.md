@@ -7,10 +7,17 @@ In addition, you can edit cells and change the cell update speed by keyboard inp
 Sample movie is [here](https://www.youtube.com/playlist?list=PL0oc7AkB1TQK4kQ9fDaY6qSUhQsMoNwQf)
 
 ![movie](./Sample_movie/4-6-7-12-13.gif)
-# On Linux 
+# On Linux (Ubuntu) 
+
+```
+$ sudo apt install clang
+$ sudo apt-get install libglu1-mesa-dev mesa-common-dev freeglut3-dev
+$ 
+```
+
 install OpenMP
 ```
-$ sudo ap install libomp-dev
+$ sudo apt install libomp-dev
 ```
 
 install OpenCL
@@ -22,7 +29,7 @@ $ sudo apt install ocl-icd-opencl-dev
 ```
 
 
-## 起動方法
+## How to start
 Normal 
 ```
 $ make Compile_Gnugcc
@@ -39,9 +46,7 @@ $ make Compile_Gnugcc_CL
 $ ./3D_LifeGame
 ```
 
-
-
-The initial value operation is done in lines 20~25.
+The initial status is determined in `config.h` lines 20~23.(This is only used in Normal compile, OpenMP and OpenCL is in development)
 It is interesting to change the cell's update settings (survive, birth array), because they vary considerably.
 
 ## How to manupulate
