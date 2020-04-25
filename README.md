@@ -1,47 +1,47 @@
 # 3Dセルオートマトンの実装
 
-これは、セルオートマトンの一種であるConwayの[ライフゲーム](https://ja.wikipedia.org/wiki/%E3%83%A9%E3%82%A4%E3%83%95%E3%82%B2%E3%83%BC%E3%83%A0)を拡張したものである。
-3次元空間への拡張や、状態数の変更、寿命の概念の追加などを行い、従来のライフゲームとは異なるものを実装することで、見栄えを良くした。
-また、キーボード入力によって、セルの編集やセルの更新速度の変更を行えるようにした。
+This is an extension of [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life), which is a type of cellular automaton.
+We made it look good by implementing something different from traditional life games, such as expanding into 3D space, changing the number of states, and adding the concept of lifespan.
+In addition, you can edit cells and change the cell update speed by keyboard input.
 
-動画は[こちら](https://www.youtube.com/playlist?list=PL0oc7AkB1TQK4kQ9fDaY6qSUhQsMoNwQf)
+Sample movie is [here](https://www.youtube.com/playlist?list=PL0oc7AkB1TQK4kQ9fDaY6qSUhQsMoNwQf)
 
 ![movie](./Sample_movie/4-6-7-12-13.gif)
-## 起動方法
+## How to start
+
+clone this repository and run below command.
 
 ```
 $ make 3D_LifeGame
 $ ./3D_LifeGame
 ```
-によって起動する。
 
-初期値の操作は20~25行目で行う。
-セルの更新設定(survive, birth配列)によってかなり変わるので、
-変えてみると面白い。
+The initial value operation is done in lines 20~25.
+It is interesting to change the cell's update settings (survive, birth array), because they vary considerably.
 
+## How to manupulate
 
-## 操作方法
+How to manupulate follows the top left of the motion screen.
 
-動作画面の左上に従う。
-
-### 通常時
-|キー入力|動作内容|
+### Normal mode
+|Input key | action |
 | :--: | :--:|
-|v | 自動移動モードへの移行/通常モードへの復帰|
-|s | 一時停止/再開|
-|r | セルの初期化|
-|f | セル更新を早める|
-|d | セル更新を遅くする|
-|l | カメラ位置をリセットする|
-|c | セル初期化時の状態の変更|
-|n | 色の変更|
-|e | 編集モードへの移行|
-|q | 終了|
+|v | Shifting to automatic movement mode/returning to normal mode|
+|s | stop/resume|
+|r | Initialization of the sell status|
+|f | Faster|
+|d | Slower|
+|l | Camera position reset |
+|c | Changing the state at cell initialization |
+|n | Color change |
+|e | Edit mode |
+|q | Quit |
 
-### 編集モード時
+### Edit mode
 
-|キー入力|動作内容|
+|Input key| action |
 | :--: | :--:|
-|i/o |z方向の移動|
-|上下左右 | x,yの移動|
-|p| セルの状態の変更|
+|i/o |z-axis move|
+|up down left right array | x,y-axis 2D move|
+|p| change sell state|
+
