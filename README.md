@@ -1,4 +1,4 @@
-# 3Dセルオートマトンの実装
+# 3D_CA  (3D cell automaton)
 
 This is an extension of [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life), which is a type of cellular automaton.
 We made it look good by implementing something different from traditional life games, such as expanding into 3D space, changing the number of states, and adding the concept of lifespan.
