@@ -8,14 +8,6 @@
 #include <string>
 #include <cassert>
 
-#define grid_circle(id, grid_size)     \
-        if (id < 0) {                  \
-          id += grid_size);            \
-        } else if (id >= grid_size) {  \
-          id -= grid_size);            \
-        }
-
-        
 int OpenCL::m_default_platform_id;
 int OpenCL::m_default_device_id;
 cl::Platform OpenCL::m_platform;
@@ -131,7 +123,7 @@ void OpenCL::Init_OpenCL() {
 
   assert(sizeof(char) == sizeof(CELL_TYPE));
   assert(sizeof(survive)/sizeof(CELL_TYPE) == 23);
-  assert(sizeof(birth)/sizeof(birth) == 1);
+  assert(sizeof(birth)/sizeof(CELL_TYPE) == 1);
   assert(birth[0] == 4);
   assert(N_STATE == 5);
 
