@@ -599,7 +599,7 @@ void draw_cubic_line(int mode){
 }
 
 void timer(int value) {
-  if(counter % speed == 0){
+  if(counter % speed == 0 && !is_stop){
     if(is_move){
       g_angle1 += M_1_PI * 0.015;
     }
