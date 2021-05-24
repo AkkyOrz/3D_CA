@@ -70,5 +70,5 @@ How to manupulate follows the top left of the motion screen.
 |up down left right array | x,y-axis 2D move|
 |p| change sell state|
 
-### License
+# License
 The code is licensed under the MIT license.
