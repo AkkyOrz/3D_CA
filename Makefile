@@ -36,12 +36,11 @@ else
 endif
 
 CXXFLAGS = -Wall -Wextra -O3 -std=c++11
-LDFLAGS = -lGL -lGLU -lglut
 
 ifeq ($(OS), Linux)
 	LDFLAGS += -lGL -lGLU -lglut
 else ifeq ($(OS), Darwin)
-    LDFLAGS += -framework OpenGL -framework GLUT
+	LDFLAGS += -framework OpenGL -framework GLUT
 endif
 
 ifeq ($(openmp), yes)
@@ -52,9 +51,9 @@ endif
 ifeq ($(opencl), yes)
 	CXXFLAGS += -DUSE_OPENCL
 	ifeq ($(OS), Linux)
-    	LDFLAGS += -lOpenCL
+		LDFLAGS += -lOpenCL
 	else ifeq ($(OS), Darwin)
-    	LDFLAGS += -framework OpenCL
+		LDFLAGS += -framework OpenCL
 	endif
 endif
 
