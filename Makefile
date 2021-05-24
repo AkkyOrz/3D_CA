@@ -58,7 +58,7 @@ ifeq ($(opencl), yes)
 	endif
 endif
 
-SRCS = src/3D_LifeGame.cpp src/opencl.cpp
+SRCS = src/3D_LifeGame.cpp src/opencl.cpp src/opengl.cpp
 FLAGS = $(CXXFLAGS) $(LDFLAGS)
 
 release:

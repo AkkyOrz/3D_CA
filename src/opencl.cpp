@@ -8,26 +8,13 @@
 #include <string>
 #include <cassert>
 
-int OpenCL::m_default_platform_id;
-int OpenCL::m_default_device_id;
-cl::Platform OpenCL::m_platform;
-cl::Device   OpenCL::m_device;
-cl::Context  OpenCL::m_context;
-cl::Program  OpenCL::m_program;
-cl::Kernel   OpenCL::m_iterator_cl;
-cl::CommandQueue OpenCL::m_commandqueue;
-cl::Buffer OpenCL::buffer_cell;
-cl::Buffer OpenCL::buffer_cell_next;
-size_t OpenCL::m_cl_buffer_size;
-
-
 std::string OpenCL::m_clkernel = R"(
   __kernel void iterator
   (
     __global char * cell,
     __global char * cell_next
   )
-  { 
+  {
     const int x_shift = get_global_size(0);
     const int y_shift = get_global_size(1);
     const int z_shift = get_global_size(2);
@@ -40,7 +27,7 @@ std::string OpenCL::m_clkernel = R"(
     __private const char cell_state = cell[vertex];
     
     const char survive[23] = {4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26};
-    __private const char birth     =  4;
+    __private const char birth = 4;
 
     int n = 0;
     int m = 0;
@@ -88,7 +75,7 @@ std::string OpenCL::m_clkernel = R"(
         }
       }
     }
-    
+
     bool survive_bool = false;
     bool birth_bool   = false;
     int id;
@@ -112,15 +99,18 @@ std::string OpenCL::m_clkernel = R"(
       cell_next[vertex] = birth;
     } else {
       cell_next[vertex] = 0;
-    }
-    
+    } 
   }
-
 )";
 
-void OpenCL::Init_OpenCL() {
+OpenCL& OpenCL::get() {
+  static OpenCL cl;
+  return cl;
+}
 
-
+void OpenCL::init() {
+  // This data is hard code in opencl kernel. We need to
+  // check the kernel data is same as host memory. 
   assert(sizeof(char) == sizeof(CELL_TYPE));
   assert(sizeof(survive)/sizeof(CELL_TYPE) == 23);
   assert(sizeof(birth)/sizeof(CELL_TYPE) == 1);
@@ -142,7 +132,7 @@ void OpenCL::Init_OpenCL() {
   status = platform.getDevices(CL_DEVICE_TYPE_GPU, &devices);
   
   if (status != CL_SUCCESS) {
-    printf("No OpenCL Devices at default platform! \n");
+    printf("No OpenCL Devices int the default platform! \n");
     exit(0);
   }
 
@@ -154,14 +144,14 @@ void OpenCL::Init_OpenCL() {
   m_program = cl::Program(m_context, m_clkernel);
   
   if (m_program.build({m_device}) != CL_SUCCESS){
-    printf("Building fail! \n");
+    printf("Fail to Build the program! \n");
     exit(0);
   }
 
   m_iterator_cl  = cl::Kernel(m_program, "iterator");
   m_commandqueue = cl::CommandQueue(m_context, m_device);
 
-  m_cl_buffer_size = GRID_SIZE_X * GRID_SIZE_Y * GRID_SIZE_Z *sizeof(CELL_TYPE);
+  m_cl_buffer_size = GRID_SIZE_X * GRID_SIZE_Y * GRID_SIZE_Z * sizeof(CELL_TYPE);
   buffer_cell= cl::Buffer(m_context, CL_MEM_READ_WRITE, m_cl_buffer_size);
   buffer_cell_next = cl::Buffer(m_context, CL_MEM_READ_WRITE, m_cl_buffer_size);
 
@@ -170,18 +160,16 @@ void OpenCL::Init_OpenCL() {
 }
 
 void OpenCL::update_cells(CELL_TYPE* cell_ptr) {
-    
-	m_commandqueue.enqueueWriteBuffer(buffer_cell, CL_FALSE, 0, m_cl_buffer_size, cell_ptr);
-	
-	m_commandqueue.enqueueNDRangeKernel(m_iterator_cl, cl::NullRange,
-                                   cl::NDRange(GRID_SIZE_X, GRID_SIZE_Y, GRID_SIZE_Z),
-                                   cl::NullRange);
-	m_commandqueue.enqueueReadBuffer(buffer_cell_next, CL_FALSE, 0, m_cl_buffer_size, cell_ptr);
+  m_commandqueue.enqueueWriteBuffer(buffer_cell, CL_FALSE, 0, m_cl_buffer_size, cell_ptr);
+  m_commandqueue.enqueueNDRangeKernel(m_iterator_cl,
+                                          cl::NullRange,
+                                          cl::NDRange(GRID_SIZE_X, GRID_SIZE_Y, GRID_SIZE_Z),
+                                          cl::NullRange);
+  m_commandqueue.enqueueReadBuffer(buffer_cell_next, CL_FALSE, 0, m_cl_buffer_size, cell_ptr);
+  m_commandqueue.finish();
 }
 
 void OpenCL::print_gpu_info(cl::Device& device){
-  int id = m_default_device_id;
-  printf("Device ID:     %d\n", id);
   printf("Device name:   %s\n",
              device.getInfo<CL_DEVICE_NAME>().c_str());
   printf("Device vendor: %s\n",
