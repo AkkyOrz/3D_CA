@@ -1,4 +1,4 @@
-#include "OpenCL.h"
+#include "opencl.h"
 #include "config.h"
 
 #ifdef USE_OPENCL 

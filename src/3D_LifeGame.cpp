@@ -10,7 +10,7 @@
 #include <chrono>
 
 #include "config.h"
-#include "OpenCL.h"
+#include "opencl.h"
 #define WINDOW_X (1000)
 #define WINDOW_Y (1000)
 #define WINDOW_NAME "test2"
