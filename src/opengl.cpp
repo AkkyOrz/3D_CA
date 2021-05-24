@@ -94,7 +94,7 @@ void glut_keyboard(unsigned char key, int x, int y){
   // スピードアップ
   case 'f':
     if (is_stop == true) break;
-    if (speed > 2) speed--;
+    if (speed > 1) speed--;
     break;
   
   // スピードダウン
