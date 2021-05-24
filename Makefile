@@ -1,7 +1,4 @@
-KERNEL = $(shell uname -s)
-ifeq ($(KERNEL),Linux)
-	OS = $(shell uname -o)
-endif
+OS = $(shell uname -s)
 
 ifeq ($(NAME),)
 	NAME = 3D_LifeGame
@@ -34,14 +31,16 @@ endif
 
 ifeq ($(CPUS),)
 	openmp_cpus = 4
+else 
+	openmp_cpus = $(CPUS)
 endif
 
 CXXFLAGS = -Wall -Wextra -O3 -std=c++11
 LDFLAGS = -lGL -lGLU -lglut
 
-ifeq ($(OS), linux)
+ifeq ($(OS), Linux)
 	LDFLAGS += -lGL -lGLU -lglut
-else ifeq ($(OS), macos)
+else ifeq ($(OS), Darwin)
     LDFLAGS += -framework OpenGL -framework GLUT
 endif
 
@@ -52,9 +51,9 @@ endif
 
 ifeq ($(opencl), yes)
 	CXXFLAGS += -DUSE_OPENCL
-	ifeq ($(OS), linux)
+	ifeq ($(OS), Linux)
     	LDFLAGS += -lOpenCL
-	else
+	else ifeq ($(OS), Darwin)
     	LDFLAGS += -framework OpenCL
 	endif
 endif
