@@ -3,7 +3,13 @@
 
 #include "config.h"
 #ifdef USE_OPENCL
+
+#ifdef __APPLE__
+#include <OpenCL/cl.hpp>
+#else
 #include <CL/cl.hpp>
+#endif
+
 #include <string>
  
 class OpenCL {

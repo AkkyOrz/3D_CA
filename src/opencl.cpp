@@ -2,7 +2,7 @@
 #include "config.h"
 
 #ifdef USE_OPENCL 
-#include <CL/cl.hpp>
+
 #include <vector>
 #include <iostream>
 #include <string>
