@@ -7,7 +7,6 @@ In addition, you can edit cells and change the cell update speed by keyboard inp
 Sample movie is [here](https://www.youtube.com/playlist?list=PL0oc7AkB1TQK4kQ9fDaY6qSUhQsMoNwQf)
 
 ![movie](./Sample_movie/4-6-7-12-13.gif)
-# On Linux (Ubuntu)
 
 install OpenGL
 ```
@@ -43,8 +42,6 @@ Use OpenCL
 $ make ACC=cl
 $ ./3D_LifeGame
 ```
-
-## How to manupulate
 
 How to manupulate follows the top left of the motion screen.
 
