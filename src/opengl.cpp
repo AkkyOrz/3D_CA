@@ -1,108 +1,17 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <GL/glut.h>
-#include <random>
-#include <string.h>
-#include <vector>
-#include <iostream>
-#include <thread>
+#include "opengl.h"
 
-
-#define WINDOW_X (1000)
-#define WINDOW_Y (1000)
-#define WINDOW_NAME "test2"
-
-
-/*****************************************************************
- * ここで初期値の変更を行う
- * ここ以外は基本的にいじらない。
- * ***************************************************************/
-const int N_STATE = 5;
-const int birth[] = {4};                                                                                      //,5,6,7,8};
-const int survive[] = {4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26};
-
-const double INIT_CELL_PROPOTION = 0.2; // 初期のcellの割合 0はすべて死滅(のはず)
-const double DEG_RATE = 15.0;           // グラデーションの差分割合
-
-/*****************************************************************
- * 以上
- * ***************************************************************/
-
-// GL関係のプロトタイプ宣言
-void init_GL(int argc, char *argv[]);
-void init();
-void set_callback_functions();
-
-void glut_display();
-void glut_keyboard(unsigned char key, int x, int y);
-void glut_special_keyboard(int key, int x, int y);
-void glut_mouse(int button, int state, int x, int y);
-void glut_motion(int x, int y);
-void glut_idle();
-void timer(int value);
+CELL_TYPE cell[CELL_SIZE];
+CELL_TYPE cell_next[CELL_SIZE];
+int input_num = DEFULAT_INPUT_NUM;
+int color_ver = DEFAULT_COLOR_VERSION;
+int counter = 0;
+int speed = 1;
 
 // 定数
 GLfloat lightblue[] = {0.0,0.0, 1.0, 1.0}; // color
 GLfloat red[] = {1.0, 0.0, 0.0, 1.0};       // color
 GLfloat green[] = {0.0, 1.0, 1.0, 1.0};
 GLfloat yellow[] = {1.0, 1.0, 0.0, 1.0};
-const int GRID_SIZE_X = 50;             //gridの縦と横
-const int GRID_SIZE_Y = 50;
-const int GRID_SIZE_Z = 50;
-const int BUFSIZE = 1000;
-
-//const double GRID_OFFSET = 0.5;
-
-const int TIME_SLICE = 1;
-const double ALPHA = 0.8;
-
-
-class Point {
-public:
-    double x;
-    double y;
-    double z;
-    Point()
-    {
-        x = y = z = 0.0;
-    }
-    Point(double x0, double y0, double z0)
-    {
-        x = x0;
-        y = y0;
-        z = z0;
-    }
-};
-
-
-// lifegame関連のプロトタイプ宣言
-int cycle_x(int x);
-int cycle_y(int y);
-int cycle_z(int z);
-void init_cells();
-int count_adjacent_cells(int x, int y, int z);
-int count_adjacent_cells_2(int x, int y, int z);
-void update_cells();
-bool check_around(int dx, int dy, int dz, int state);
-
-bool check_near(int x, int y, int z);
-
-// 色変換のプロトタイプ宣言
-void rgbTolab(GLfloat rgb_color[], GLfloat lab_color[]);
-void labtoRGB(GLfloat lab_color[], GLfloat rgb_color[]);
-void hsv2rgb(GLfloat hsv_color[], GLfloat rgb_color[]);
-void rgb2hsv(GLfloat rgb_color[], GLfloat hsv_color[]);
-
-// 物体描画関連のプロトタイプ宣言
-void draw_pyramid();
-void draw_cube(Point p, GLfloat cube_color[]);
-void draw_cube_trans(Point p, GLfloat cube_color[]); 
-void draw_grid();
-void draw_cubic_line(int mode);
-void draw_lifegame();
-void draw_axis(double length);
-void draw_string(std::vector<std::string> strs, int w, int h, int x0, int y0);
 
 // グローバル変数
 double g_angle1 = 0.0;
@@ -113,44 +22,14 @@ bool g_isLeftButtonOn = false;
 bool g_isRightButtonOn = false;
 bool is_stop = false;
 bool is_move = false;
-static bool is_editor_mode = false;
-static int INPUT_NUM = 1; //0 なら　tmp.txtから持ってくる
-                         //1 はランダム
-                         //2はN_STATE-1のランダムは
-                         //3は固定値
-                         //4は固定値
+bool is_editor_mode = false;
 
-int cell[GRID_SIZE_X][GRID_SIZE_Y][GRID_SIZE_Z];
-int cell_next[GRID_SIZE_X][GRID_SIZE_Y][GRID_SIZE_Z];
-int cell_temp[GRID_SIZE_X][GRID_SIZE_Y][GRID_SIZE_Z];
-//double cell_size[GRID_SIZE_X][GRID_SIZE_Y][GRID_SIZE_Z];
-static int counter = 0;
-static int speed = 10;
-static int edit_now[3] = {GRID_SIZE_X/2, GRID_SIZE_Y/2, GRID_SIZE_Z/2};
-int color_ver = 1; // 0 は原点から最奥までのグラデーション,
-                   // 1は状態ごとの色分け
-                   // 2は単色,
-                   // 3は中心からのグラデーション
+std::chrono::steady_clock::time_point clock_record;
+int edit_now[3] = {GRID_SIZE_X/2, GRID_SIZE_Y/2, GRID_SIZE_Z/2};
 
-static int N_birth;
-static int N_survive;
-static int generation = 0;
-
-int main(int argc, char *argv[]){
-  /* OpenGLの初期化 */
-  init_GL(argc,argv);
-
-  /* このプログラム特有の初期化 */
-  init();
-
-  /* コールバック関数の登録 */
-  set_callback_functions();
-
-  /* メインループ */
-  glutMainLoop();
-
-  return 0;
-}
+int N_birth = 0;
+int N_survive = 0;
+int generation = 0;
 
 void init_GL(int argc, char *argv[]){
   glutInit(&argc, argv);
@@ -160,10 +39,10 @@ void init_GL(int argc, char *argv[]){
 }
 
 void init(){
-  glClearColor(0.2, 0.2, 0.2, 0.2);         // 背景の塗りつぶし色を指定
+  glClearColor(0.2, 0.2, 0.2, 0.2); // 背景の塗りつぶし色を指定
   init_cells();
-  N_birth = sizeof(birth)/sizeof(*birth);
-  N_survive = sizeof(survive)/sizeof(*survive);
+  N_birth = sizeof(birth)/sizeof(CELL_TYPE);
+  N_survive = sizeof(survive)/sizeof(CELL_TYPE);
 }
 
 void set_callback_functions(){
@@ -173,13 +52,14 @@ void set_callback_functions(){
   glutMouseFunc(glut_mouse);
   glutMotionFunc(glut_motion);
   glutPassiveMotionFunc(glut_motion);
-  //glutIdleFunc(glut_idle);
   glutTimerFunc(TIME_SLICE , timer , 0);
 }
 
 void glut_keyboard(unsigned char key, int x, int y){
+  (void) x;
+  (void) y;
+
   switch(key){
-  
   case 'v':
     if (is_move == true)
     {
@@ -214,7 +94,7 @@ void glut_keyboard(unsigned char key, int x, int y){
   // スピードアップ
   case 'f':
     if (is_stop == true) break;
-    if (speed > 2) speed--;
+    if (speed > 1) speed--;
     break;
   
   // スピードダウン
@@ -232,15 +112,15 @@ void glut_keyboard(unsigned char key, int x, int y){
   
   // 初期値変更
   case 'c':
-    if (INPUT_NUM < 4){
-      INPUT_NUM++;
+    if (input_num < 4){
+      input_num++;
     } else {
-      INPUT_NUM = 1;
+      input_num = 1;
     }
     break;
     
   case 'n':
-    if (color_ver < 3){
+    if (color_ver < 3) {
       color_ver++;
     } else {
       color_ver = 0;
@@ -253,46 +133,58 @@ void glut_keyboard(unsigned char key, int x, int y){
     is_stop = true;
     break;
 
-    // z軸に-1
-    case 'i':
-      if (is_editor_mode == true)
-      {
-        edit_now[2]--;
-        edit_now[2] = cycle_z(edit_now[2]);
-      }
-      break;
+  // z軸に-1
+  case 'i':
+    if (is_editor_mode == true) {
+      edit_now[2]--;
+      edit_now[2] = cycle_z(edit_now[2]);
+    }
+    break;
     
-    case 'p':
-      if (is_editor_mode == true){
-        if (cell[edit_now[0]][edit_now[1]][edit_now[2]] == 0){
-          cell[edit_now[0]][edit_now[1]][edit_now[2]] = N_STATE-1;
-        } else {
-          cell[edit_now[0]][edit_now[1]][edit_now[2]] --;
-        }
-
+  case 'p':
+    if (is_editor_mode == true) {
+      if (cell[grid_index(edit_now[0], edit_now[1], edit_now[2])] == 0) {
+        cell[grid_index(edit_now[0], edit_now[1], edit_now[2])] = N_STATE-1;
+      } else {
+        cell[grid_index(edit_now[0], edit_now[1], edit_now[2])] --;
       }
-      break;
-    // z軸に+1
-    case 'o':
-      if (is_editor_mode == true)
-      {
-        edit_now[2]++;
-        edit_now[2] = cycle_z(edit_now[2]);
-      }
-      break;
+    }
+    break;
 
-    // 終了
-    case 'q':
-    case 'Q':
-    case '\033':
-      exit(0);
+  // z軸に+1
+  case 'o':
+    if (is_editor_mode == true) {
+      edit_now[2]++;
+      edit_now[2] = cycle_z(edit_now[2]);
+    }
+    break;
+
+  // 終了
+  case 'q':
+  case 'Q':
+  case '\033':
+    auto end_clock = std::chrono::steady_clock::now();
+    auto get_microseconds = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(end_clock - clock_record).count());
+    auto get_seconds = static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(end_clock - clock_record).count());
+    float during_times;
+    if(std::fabs(get_seconds - (get_microseconds)/1000.f ) <= 1.f){
+      during_times = get_microseconds/1000.f;
+    } else {
+      during_times = get_seconds;
+    }
+    printf("Stats:\n");
+    printf("  %.3f (sec) \n" ,during_times);
+    printf("  %.3f (generations/sec) \n", static_cast<float>(generation)/during_times);
+    exit(0);
   }
 
   glutPostRedisplay();
 }
 
-void glut_special_keyboard(int key, int x, int y)
-{
+void glut_special_keyboard(int key, int x, int y) {
+  (void) x;
+  (void) y;
+
   if (is_editor_mode == true){
     // x軸に-1
     if (key == GLUT_KEY_LEFT){
@@ -323,6 +215,9 @@ void glut_special_keyboard(int key, int x, int y)
 }
 
 void glut_mouse(int button, int state, int x, int y){
+  (void) x;
+  (void) y;
+
   if(button == GLUT_LEFT_BUTTON){
     if(state == GLUT_UP){
       g_isLeftButtonOn = false;
@@ -404,13 +299,6 @@ void glut_display(){
     }
   }
 
-  
-/*
-  GLfloat lightpos[] = {(float)(g_distance * cos(g_angle2) * sin(g_angle1)),
-          (float)(g_distance * sin(g_angle2)),
-          (float)(g_distance * cos(g_angle2) * cos(g_angle1)),
-          1.0};
-*/
   GLfloat lightpos[] = {GRID_SIZE_X, GRID_SIZE_Y, GRID_SIZE_Z};
   GLfloat lightpos1[] = {GRID_SIZE_X, GRID_SIZE_Y, GRID_SIZE_Z};
   GLfloat diffuse[] = {1.0, 1.0, 1.0, 0.5};
@@ -421,7 +309,6 @@ void glut_display(){
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_BLEND);
   glEnable(GL_LINE_SMOOTH);
-  //glEnable(GL_CULL_FACE);
 
   if (is_editor_mode == true)
   {
@@ -434,7 +321,6 @@ void glut_display(){
   glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
   glEnable(GL_LIGHT1);
-  //glCullFace(GL_FRONT);
 
   glLightfv(GL_LIGHT0, GL_POSITION, lightpos);
   glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
@@ -605,15 +491,21 @@ void draw_cubic_line(int mode){
     glEnd();
 }
 
-
 void timer(int value) {
-  if(counter % speed == 0){
-    if(is_move){
+  (void) value;
+
+  if (counter % speed == 0 && !is_stop) {
+    if (is_move) {
       g_angle1 += M_1_PI * 0.015;
     }
+#ifdef USE_OPENCL
+    OpenCL::get().update_cells(cell);
+#else 
     update_cells();
-    if (is_move)
-    {
+#endif
+    generation++;
+
+    if (is_move) {
       g_angle1 += M_1_PI * 0.015;
     }
   }
@@ -623,10 +515,9 @@ void timer(int value) {
     g_angle1 += M_1_PI * 0.015;
   }
   
-	glutPostRedisplay();
-	glutTimerFunc(TIME_SLICE , timer , 0);
+  glutPostRedisplay();
+  glutTimerFunc(TIME_SLICE , timer , 0);
 }
-
 
 // Point{x, y, z}を起点にPoint{x+1, y+1, z+1}の立方体を描画する。
 // ただし透過する
@@ -712,13 +603,13 @@ void draw_cube_trans(Point p, GLfloat cube_color[]){
 
   GLfloat vertics[8][3] =
       {
-          {(float)(p.x+0.0f),(float)(p.y+0.0f), (float)(p.z+0.0f)},                      // 0
-          {(float)(p.x+1.0f),(float)(p.y+0.0f), (float)(p.z+0.0f)},               // 1
-          {(float)(p.x+0.0f),(float)(p.y+1.0f), (float)(p.z+0.0f)},               // 2
-          {(float)(p.x+0.0f),(float)(p.y+0.0f), (float)(p.z+1.0f)},               // 3
-          {(float)(p.x+1.0f),(float)(p.y+1.0f), (float)(p.z+0.0f)},        // 4
-          {(float)(p.x+0.0f),(float)(p.y+1.0f), (float)(p.z+1.0f)},        // 5
-          {(float)(p.x+1.0f),(float)(p.y+0.0f), (float)(p.z+1.0f)},        // 6
+          {(float)(p.x+0.0f),(float)(p.y+0.0f), (float)(p.z+0.0f)}, // 0
+          {(float)(p.x+1.0f),(float)(p.y+0.0f), (float)(p.z+0.0f)}, // 1
+          {(float)(p.x+0.0f),(float)(p.y+1.0f), (float)(p.z+0.0f)}, // 2
+          {(float)(p.x+0.0f),(float)(p.y+0.0f), (float)(p.z+1.0f)}, // 3
+          {(float)(p.x+1.0f),(float)(p.y+1.0f), (float)(p.z+0.0f)}, // 4
+          {(float)(p.x+0.0f),(float)(p.y+1.0f), (float)(p.z+1.0f)}, // 5
+          {(float)(p.x+1.0f),(float)(p.y+0.0f), (float)(p.z+1.0f)}, // 6
           {(float)(p.x+1.0f),(float)(p.y+1.0f), (float)(p.z+1.0f)}, // 7
       };
 
@@ -727,16 +618,14 @@ void draw_cube_trans(Point p, GLfloat cube_color[]){
   glLineWidth(2.0);
   glColor3f(1.0, 1.0, 1.0);
 
-  for (int i = 0; i < 4; i++)
-  {
+  for (int i = 0; i < 4; i++) {
     glBegin(GL_LINES);
     glVertex3fv(vertics[0]);
     glVertex3fv(vertics[i]);
     glEnd();
   }
 
-  for (int i = 4; i < 7; i++)
-  {
+  for (int i = 4; i < 7; i++) {
     glBegin(GL_LINES);
     glVertex3fv(vertics[7]);
     glVertex3fv(vertics[i]);
@@ -778,12 +667,12 @@ void draw_cube_trans(Point p, GLfloat cube_color[]){
 
 void draw_lifegame(){
   GLfloat point_color[4];
-  if (color_ver == 0){ 
+  if (color_ver == 0) { 
     // 原点から再奥までのグラデーション
     for (int y = 0; y < GRID_SIZE_Y; y++){
       for (int x = 0; x < GRID_SIZE_X; x++){
         for (int z = 0; z < GRID_SIZE_Z; z++){
-          if (cell[x][y][z]){
+          if (cell[grid_index(x, y, z)]) {
             point_color[0] = (double)(x) / GRID_SIZE_X;
             point_color[1] = (double)(y) / GRID_SIZE_Y;
             point_color[2] = (double)(z) / GRID_SIZE_Z;
@@ -809,9 +698,9 @@ void draw_lifegame(){
     for (int y = 0; y < GRID_SIZE_Y; y++){
       for (int x = 0; x < GRID_SIZE_X; x++){
         for (int z = 0; z < GRID_SIZE_Z; z++){
-          if (cell[x][y][z]){
+          if (cell[grid_index(x, y, z)]) {
             for (int i = 0; i < N_STATE-1; i++){
-              if (cell[x][y][z] == i+1){
+              if (cell[grid_index(x, y, z)] == i+1) {
                 point_color[0] = rgb_colors[i][0];
                 point_color[1] = rgb_colors[i][1];
                 point_color[2] = rgb_colors[i][2];
@@ -858,7 +747,7 @@ void draw_lifegame(){
     for (int y = 0; y < GRID_SIZE_Y; y++){
       for (int x = 0; x < GRID_SIZE_X; x++){
         for (int z = 0; z < GRID_SIZE_Z; z++){
-          if (cell[x][y][z]) {
+          if (cell[grid_index(x, y, z)]) {
             draw_cube_trans(Point((double)x, (double)y, double(z)), color);
           }
         }
@@ -872,7 +761,7 @@ void draw_lifegame(){
     for (int y = 0; y < GRID_SIZE_Y; y++){
       for (int x = 0; x < GRID_SIZE_X; x++){
         for (int z = 0; z < GRID_SIZE_Z; z++){
-          if (cell[x][y][z]){
+          if (cell[grid_index(x, y, z)]) {
             hsv_color[0]= 15*std::sqrt((double)(x - GRID_SIZE_X / 2) * (x - GRID_SIZE_X / 2) +
                                        (double)(y - GRID_SIZE_Y / 2) * (y - GRID_SIZE_Y / 2) + 
                                        (double)(z - GRID_SIZE_Z / 2) * (z - GRID_SIZE_Z / 2));
@@ -892,110 +781,90 @@ void draw_lifegame(){
   }
 }
 
-
+inline int grid_index(const int x, const int y, const int z){
+  return x + y*GRID_SIZE_X + z*XY_PLANE_SIZE; 
+}
 
 void init_cells(){
-  int x = 0, y;
+  static constexpr int BUFSIZE = 1024;
+  int x = 0, y = 0;
   char buf[BUFSIZE];
   FILE *fp;
   const char *filename = "tmp.txt";
 
   generation = 0;
+  clock_record = std::chrono::steady_clock::now();
+  std::fill(std::begin(cell), std::end(cell), 0);
 
-  for (int y = 0; y < GRID_SIZE_Y; y++)
-  {
-    for (int x = 0; x < GRID_SIZE_X; x++)
-    {
-      for (int z = 0; z < GRID_SIZE_Z; z++)
-      {
-        cell[x][y][z] = 0;
-      }
-    }
-  }
-
-  if (INPUT_NUM == 0){ //  仕方がないので z = 0 として初期化を行う
+  if (input_num == 0) { //  仕方がないので z = 0 として初期化を行う
     if ((fp = fopen(filename, "r")) == NULL) {
       printf("error: can't open %s\n", filename);
       return;
     }
 
     while (fgets(buf, BUFSIZE, fp) != NULL) {
-      size_t len = strlen(buf) - 1;
+      int len = (int)strlen(buf) - 1;
       for (x = 0; x < len; x++){
         if (buf[x] == ' '){
-          cell[x][y][0] = 0;
+          cell[grid_index(x, y ,0)] = 0;
         } else {
-          cell[x][y][0] = N_STATE-1;
+          cell[grid_index(x, y ,0)] = N_STATE-1;
         }
       }
       y++;
     }
     fclose(fp);
-  } else if (INPUT_NUM == 1){
+  } else if (input_num == 1) {
     // 乱数に従って最初の分布を生成
     std::random_device seed_gen;
     std::default_random_engine engine(seed_gen());
     std::bernoulli_distribution distribution(INIT_CELL_PROPOTION);
     for (int y = GRID_SIZE_Y / 4; y < GRID_SIZE_Y / 4 * 3; y++){
       for (int x = GRID_SIZE_X / 4; x < GRID_SIZE_X / 4 * 3; x++){
-        for (int z = GRID_SIZE_Z / 4; z < GRID_SIZE_Z / 4 * 3; z++)
-        {
+        for (int z = GRID_SIZE_Z / 4; z < GRID_SIZE_Z / 4 * 3; z++) {
           for (int i = 1; i < N_STATE; i++){
             if (distribution(engine)){
-              cell[x][y][z] = N_STATE - i;
-            }
-          }
-          //if (distribution(engine))
-          //{
-          //  cell[x][y][z] = N_STATE - 1;
-          //}
-        
-        }
-        }
-    }
-  }else if (INPUT_NUM == 2){
-      // 乱数に従って最初の分布を生成
-      std::random_device seed_gen;
-      std::default_random_engine engine(seed_gen());
-      std::bernoulli_distribution distribution(INIT_CELL_PROPOTION);
-      for (int y = GRID_SIZE_Y / 4; y < GRID_SIZE_Y / 4 * 3; y++)
-      {
-        for (int x = GRID_SIZE_X / 4; x < GRID_SIZE_X / 4 * 3; x++)
-        {
-          for (int z = GRID_SIZE_Z / 4; z < GRID_SIZE_Z / 4 * 3; z++)
-          {
-            if (distribution(engine))
-            {
-              cell[x][y][z] = N_STATE - 1;
+              cell[grid_index(x, y ,z)] = N_STATE - i;
             }
           }
         }
       }
-  }else if (INPUT_NUM == 3){
+    }
+  } else if (input_num == 2) {
+    // 乱数に従って最初の分布を生成
+    std::random_device seed_gen;
+    std::default_random_engine engine(seed_gen());
+    std::bernoulli_distribution distribution(INIT_CELL_PROPOTION);
+    for (int y = GRID_SIZE_Y / 4; y < GRID_SIZE_Y / 4 * 3; y++) {
+      for (int x = GRID_SIZE_X / 4; x < GRID_SIZE_X / 4 * 3; x++) {
+        for (int z = GRID_SIZE_Z / 4; z < GRID_SIZE_Z / 4 * 3; z++) {
+          if (distribution(engine)) {
+            cell[grid_index(x, y, z)] = N_STATE - 1;
+          }
+        }
+      }
+    }
+  } else if (input_num == 3) {
     for (int x = 0; x < N_STATE; x++){
-      for (int y = GRID_SIZE_Y/2-1; y <= GRID_SIZE_Y/2; y++){
-        for (int z = GRID_SIZE_Z / 2 - 1; z <= GRID_SIZE_Z / 2; z++){
-          cell[x + GRID_SIZE_X/2][y][z] = x;
+      for (int y = GRID_SIZE_Y/2-1; y <= GRID_SIZE_Y/2; y++) {
+        for (int z = GRID_SIZE_Z / 2 - 1; z <= GRID_SIZE_Z / 2; z++) {
+          cell[grid_index(x + GRID_SIZE_X/2, y, z)] = x;
         }
       }
     }
   }
-  else if (INPUT_NUM == 4)
-  {
-    for (int x = 0; x < N_STATE; x++)
-    {
-      for (int y = GRID_SIZE_Y / 2 - 1; y <= GRID_SIZE_Y / 2; y++)
-      {
-        for (int z = GRID_SIZE_Z / 2 - 1; z <= GRID_SIZE_Z / 2 + 1; z++)
-        {
+  else if (input_num == 4) {
+    for (int x = 0; x < N_STATE; x++) {
+      for (int y = GRID_SIZE_Y / 2 - 1; y <= GRID_SIZE_Y / 2; y++) {
+        for (int z = GRID_SIZE_Z / 2 - 1; z <= GRID_SIZE_Z / 2 + 1; z++) {
           if (z == GRID_SIZE_Z/2 - 1){
-            cell[x + GRID_SIZE_X / 2][y][z] = N_STATE-1-x;
+            cell[grid_index(x + GRID_SIZE_X/2, y, z)] = N_STATE-1-x;
           } else if (z == GRID_SIZE_Z/2){
-            cell[x + GRID_SIZE_X / 2][y][z] = N_STATE - 1 - x;
-            cell[GRID_SIZE_X / 2 + N_STATE-2][y][z] = 0;
+            cell[grid_index(x + GRID_SIZE_X/2, y, z)] = N_STATE - 1 - x;
+            cell[grid_index(GRID_SIZE_X/2 + N_STATE-2, y, z)] = 0;
           } else {
-            cell[x + GRID_SIZE_X / 2 + 1][y][z] = N_STATE - 1 - x;
-            cell[GRID_SIZE_X / 2 + N_STATE - 1][y][z] = 0;
+            cell[grid_index(x + GRID_SIZE_X/2 + 1, y, z)] = N_STATE - 1 - x;
+            cell[grid_index(GRID_SIZE_X/2 + N_STATE-1, y, z)] = 0;
           }
         }
       }
@@ -1009,16 +878,16 @@ void init_cells(){
 
 // ここのcheck_around()は編集
 
-int count_adjacent_cells(int x, int y, int z){
+int count_adjacent_cells(int x, int y, int z) {
   int n = 0;
   int dx, dy, dz;
-  int state = cell[x][y][z];
+  int state = cell[grid_index(x, y, z)];
 
   for (dx = x - 1; dx <= x + 1; dx++) {
     for (dy = y - 1; dy <= y + 1; dy++) {
       for (dz = z - 1; dz <= z + 1; dz++){
         if (dx == x && dy == y && dz == z) continue;
-        if (check_around(cycle_x(dx), cycle_y(dy), cycle_z(dz), state) == true){
+        if (check_around(cycle_x(dx), cycle_y(dy), cycle_z(dz), state) == true) {
           n++;
         }
       }
@@ -1027,22 +896,18 @@ int count_adjacent_cells(int x, int y, int z){
   return n;
 }
 
-int count_adjacent_cells_2(int x, int y, int z)
-{
+int count_adjacent_cells_2(int x, int y, int z) {
   int n = 0;
   int dx, dy, dz;
-  int state = cell[x][y][z];
+  int state = cell[grid_index(x, y, z)]+1;
 
-  for (dx = x - 1; dx <= x + 1; dx++)
-  {
-    for (dy = y - 1; dy <= y + 1; dy++)
-    {
-      for (dz = z - 1; dz <= z + 1; dz++)
-      {
-        if (dx == x && dy == y && dz == z)
+  for (dx = x - 1; dx <= x + 1; dx++) {
+    for (dy = y - 1; dy <= y + 1; dy++) {
+      for (dz = z - 1; dz <= z + 1; dz++) {
+        if (dx == x && dy == y && dz == z) {
           continue;
-        if (check_around(cycle_x(dx), cycle_y(dy), cycle_z(dz), state+1) == true)
-        {
+        }
+        if (check_around(cycle_x(dx), cycle_y(dy), cycle_z(dz), state) == true) {
           n++;
         }
       }
@@ -1055,82 +920,92 @@ int count_adjacent_cells_2(int x, int y, int z)
 // dx, dy, dz は周りのセル
 // state は自分の状態
 
-bool check_around(int dx, int dy, int dz, int state){
+inline bool check_around(int dx, int dy, int dz, int state){
   if (state == 0){
     // 新しいセルを発生させられるかどうか
-    return cell[dx][dy][dz] >= N_STATE - 1;   
+
+    return cell[grid_index(dx, dy, dz)] >= N_STATE - 1;  
   } else {
     // 自分の状態より「良い」状態のセルかどうか
-    return cell[dx][dy][dz] == state - 1; //  == true;
+
+    return cell[grid_index(dx, dy, dz)] == state - 1; //  == true;
     // ここは >= stateが一番動いてるけど...
     // > state, やってほしいのは   == state+1
   }
 }
 
-bool check_birth(int x, int y, int z, int n){
-    bool birth_val = false;
-    if (cell[x][y][z] > 0) return false;
-    for (int i = 0; i < N_birth; i++){
-      if (birth[i] == n){
-        birth_val = true;
-        break;
+inline bool check_birth(int idx, int n) {
+    if (cell[idx] > 0) return false;
+    for (int i = 0; i < N_birth; i++) {
+      if (birth[i] == n) {
+        return true;
       }
     }
-    return birth_val;
+    return false;
 }
 
-bool check_survive(int x, int y, int z, int n){
-  bool survive_val = false;
+inline bool check_survive(int idx, int n) {
   // 自分がsurviveじゃないなら関係ない。
-  if (cell[x][y][z] == 0) return false;
-  for (int i = 0; i < N_survive; i++){
-    if (survive[i] == n){
-      survive_val = true;
-      break;
+  if (cell[idx] == 0) return false;
+  for (int i = 0; i < N_survive; i++) {
+    if (survive[i] == n) {
+      return true;
     }
   }
-  return survive_val;
+  return false;
 }
 
 // この関数によって次の状態の細胞の生死を決定するが、、、
 // 3Dのあれは想像できないので、今は適当な数字を考える。
 void update_cells(){
-  int x, y, z;
+#ifdef USE_OPENMP
+  #pragma omp parallel num_threads(OPENMP_THREAD) 
+  {
+    #pragma omp for
+    for (int idx = 0; idx < CELL_SIZE; ++idx) {
+      const int z = idx / XY_PLANE_SIZE;
+      const int res = idx - z*XY_PLANE_SIZE;
+      const int y = res / GRID_SIZE_X;
+      const int x = res % GRID_SIZE_X;
 
-  for (x = 0; x < GRID_SIZE_X; x++) {
-    for (y = 0; y < GRID_SIZE_Y; y++) {
-      for (z = 0; z < GRID_SIZE_Z; z++){
+      const int n = count_adjacent_cells(x, y, z);
+      const int m = count_adjacent_cells_2(x, y, z);
+      if (check_survive(idx, n) || check_survive(idx, m)) { // survive
+        cell_next[idx] = cell[idx];
+        cell_next[idx]--;
+      } else if (check_birth(idx, n)) { // birth
+        cell_next[idx] = N_STATE - 1;
+      } else {
+        cell_next[idx] = 0;
+      }
+    }
+  }
+
+#else
+  // More faster in one thread.
+  for (int x = 0; x < GRID_SIZE_X; x++) {
+    for (int y = 0; y < GRID_SIZE_Y; y++) {
+      for (int z = 0; z < GRID_SIZE_Z; z++){
+        const int index = grid_index(x, y, z);
         const int n = count_adjacent_cells(x, y, z);
         const int m = count_adjacent_cells_2(x, y, z);
-        if (check_survive(x,y,z,n) || check_survive(x, y, z, m)){           // survive
-          cell_next[x][y][z] = cell[x][y][z];
-          if (cell_next[x][y][z] > 0){
-            cell_next[x][y][z]--;
-            //if (generation >= 0){
-            //  printf("%d, %d\n",cell[x][y][z],cell_next[x][y][z]);
-            //}
-          }
-        } else if (check_birth(x,y,z,n)){ // birth
-          cell_next[x][y][z] = N_STATE - 1;     
+        if (check_survive(index, n) || check_survive(index, m)) { // survive
+          cell_next[index] = cell[index];
+          cell_next[index]--;
+        } else if (check_birth(index, n)) { // birth
+          cell_next[index] = N_STATE - 1;
         } else {
-          cell_next[x][y][z] = 0;
+          cell_next[index] = 0;
         }
       }
     }
   }
+#endif
 
-  for (x = 0; x < GRID_SIZE_X; x++) {
-    for (y = 0; y < GRID_SIZE_Y; y++) {
-      for (z = 0; z < GRID_SIZE_Z; z++){
-        cell_temp[x][y][z] = cell[x][y][z];
-        cell[x][y][z] = cell_next[x][y][z];
-      }
-    }
-  }
-  generation++;
+  std::copy(std::begin(cell_next), std::end(cell_next), std::begin(cell));
 }
 
-int cycle_y(int y){        //境界を消去
+inline int cycle_y(int y){        //境界を消去
   if (y >= GRID_SIZE_Y){
     return y - GRID_SIZE_Y;
   } else if (y < 0){
@@ -1140,7 +1015,7 @@ int cycle_y(int y){        //境界を消去
   }
 }
 
-int cycle_x(int x){          //境界を消去
+inline int cycle_x(int x){          //境界を消去
   if (x >= GRID_SIZE_X){
     return x - GRID_SIZE_X;
   } else if (x < 0){
@@ -1150,7 +1025,7 @@ int cycle_x(int x){          //境界を消去
   }
 }
 
-int cycle_z(int z){        //境界を消去
+inline int cycle_z(int z){        //境界を消去
   if (z >= GRID_SIZE_Z){
     return z - GRID_SIZE_Z;
   } else if (z < 0){
@@ -1162,7 +1037,6 @@ int cycle_z(int z){        //境界を消去
 
 // https://qiita.com/hachisukansw/items/09caabe6bec46a2a0858
 void rgbTolab(GLfloat rgb_color[], GLfloat lab_color[]){
-
   float r = rgb_color[0];
   float g = rgb_color[1];
   float b = rgb_color[2];
@@ -1298,7 +1172,7 @@ void hsv2rgb(GLfloat hsv_color[], GLfloat rgb_color[]){
 
 
 void draw_axis(double length){
-   GLUquadricObj *arrows[3];
+  GLUquadricObj *arrows[3];
 
   glLineWidth(2.0);
 
@@ -1385,10 +1259,10 @@ void draw_string(std::vector<std::string> strs, int w, int h, int x0, int y0)
 
 
 bool check_near(int x, int y, int z){
-  return (cell[x+1][y][z] > 0 && 
-          cell[x-1][y][z] > 0 &&
-          cell[x][y+1][z] > 0 &&
-          cell[x][y-1][z] > 0 &&
-          cell[x][y][z+1] > 0 &&
-          cell[x][y][z-1] > 0);
+  return (cell[grid_index(x+1, y, z)] > 0 && 
+          cell[grid_index(x-1, y, z)] > 0 &&
+          cell[grid_index(x, y+1, z)] > 0 &&
+          cell[grid_index(x, y-1, z)] > 0 &&
+          cell[grid_index(x, y, z+1)] > 0 &&
+          cell[grid_index(x, y, z-1)] > 0);
 }

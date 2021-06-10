@@ -7,17 +7,42 @@ In addition, you can edit cells and change the cell update speed by keyboard inp
 Sample movie is [here](https://www.youtube.com/playlist?list=PL0oc7AkB1TQK4kQ9fDaY6qSUhQsMoNwQf)
 
 ![movie](./Sample_movie/4-6-7-12-13.gif)
-## How to start
+# On Linux (Ubuntu)
 
-clone this repository and run below command.
-
+install OpenGL
 ```
-$ make 3D_LifeGame
+$ sudo apt-get install libglu1-mesa-dev mesa-common-dev freeglut3-dev
+```
+
+install OpenMP
+```
+$ sudo apt install libomp-dev
+```
+
+install OpenCL
+```
+$ sudo apt install clinfo
+$ sudo apt install ocl-icd-libopencl1
+$ sudo apt install opencl-headers
+$ sudo apt install ocl-icd-opencl-dev
+```
+
+## Compile
+Normal mode
+```
+$ make
 $ ./3D_LifeGame
 ```
-
-The initial value operation is done in lines 20~25.
-It is interesting to change the cell's update settings (survive, birth array), because they vary considerably.
+Use OpenMP
+```
+$ make ACC=mp
+$ ./3D_LifeGame
+```
+Use OpenCL
+```
+$ make ACC=cl
+$ ./3D_LifeGame
+```
 
 ## How to manupulate
 
@@ -45,3 +70,5 @@ How to manupulate follows the top left of the motion screen.
 |up down left right array | x,y-axis 2D move|
 |p| change sell state|
 
+# License
+The code is licensed under the MIT license.
